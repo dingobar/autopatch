@@ -4,9 +4,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"log"
 	"os/exec"
 	"strings"
+
+	"github.com/sirupsen/logrus"
 )
 
 type HelmClient struct {
@@ -39,7 +40,7 @@ type ChartConfig struct {
 func (client *HelmClient) run(cmd ...string) (output []byte, err error) {
 	out, err := exec.Command("helm", cmd...).Output()
 	if err != nil {
-		log.Fatalf("Command %s failed with error %s", cmd, err)
+		logrus.Fatalf("Command %s failed with error %s", cmd, err)
 	}
 	return out, err
 }
@@ -68,7 +69,7 @@ func (client *HelmClient) GetReleaseByName(name, namespace string) Release {
 			return release
 		}
 	}
-	log.Fatalf("Error: Release with name %s was not found in %s", name, namespace)
+	logrus.Warningf("Release with name %s was not found in %s", name, namespace)
 	return Release{}
 }
 
@@ -103,6 +104,9 @@ func LoopChartsAndCheck(charts []ChartConfig) []error {
 		desired := client.GetLatestChart(chart.Chart, chart.Repo)
 		// Get actual version
 		actual := client.GetReleaseByName(chart.Release, chart.Namespace)
+		if actual.Name == "" {
+			continue
+		}
 		// Compare
 		if desired.Version != actual.Version() {
 			versionErrors = append(versionErrors, errors.New(fmt.Sprintf("Release %s in %s is version %s, but %s is available in %s", actual.Name, actual.Namespace, actual.Version(), desired.Version, chart.Repo)))

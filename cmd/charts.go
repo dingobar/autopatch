@@ -1,34 +1,34 @@
 package cmd
 
 import (
-	"fmt"
-	"log"
-	"os"
-
 	autopatch "github.com/dingobar/autopatch/autopatch"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
 func CheckCharts(cmd *cobra.Command, args []string) {
-	fmt.Println("Checking for chart updates...")
+	logrus.Infoln("Checking for chart updates...")
 	var chartConfig []autopatch.ChartConfig
 	err := viper.UnmarshalKey("charts", &chartConfig)
 	if err != nil {
-		log.Fatalf("%s", err)
+		logrus.Fatalf("%s", err)
 	}
 	errs := autopatch.LoopChartsAndCheck(chartConfig)
 
 	for _, err := range errs {
-		fmt.Println(err)
+		logrus.Error(err)
 	}
 
 	check, err := cmd.Flags().GetBool("check")
 	if err != nil {
-		log.Fatalf("Unexpected error %s", err)
+		logrus.Fatalf("Unexpected error %s", err)
 	}
 	if len(errs) > 0 && check {
-		os.Exit(1)
+		logrus.Errorf("FAILED - %d charts have new versions", len(errs))
+		logrus.Exit(1)
+	} else {
+		logrus.Info("OK")
 	}
 }
 
