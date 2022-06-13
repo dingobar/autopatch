@@ -15,17 +15,14 @@ import (
 // rootCmd represents the base command when called without any subcommands
 var rootCmd = &cobra.Command{
 	Use:   "autopatch",
-	Short: "A brief description of your application",
-	Long: `A longer description that spans multiple lines and likely contains
-examples and usage of using your application. For example:
-
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
+	Short: "Checks versions of software and suggests updates",
+	Long: `A simple CLI tool that automates checking for new versions of apps and compares it to
+	running versions`,
 	// Uncomment the following line if your bare application
 	// has an action associated with it:
 	// Run: func(cmd *cobra.Command, args []string) { },
 }
+var cfgFile string
 
 // Execute adds all child commands to the root command and sets flags appropriately.
 // This is called by main.main(). It only needs to happen once to the rootCmd.
@@ -42,7 +39,7 @@ func init() {
 	// Cobra supports persistent flags, which, if defined here,
 	// will be global for your application.
 
-	// rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (default is $HOME/.autopatch.yaml)")
+	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "./autopatch.yaml", "path to autopatch.yaml")
 
 	// Cobra also supports local flags, which will only run
 	// when this action is called directly.
@@ -50,9 +47,7 @@ func init() {
 }
 
 func initConfig() {
-	viper.SetConfigName("config.yaml")
-	viper.SetConfigType("yaml")
-	viper.AddConfigPath(".")
+	viper.SetConfigFile(cfgFile)
 	err := viper.ReadInConfig()
 	if err != nil {
 		panic(fmt.Errorf("Fatal error config file: %w \n", err))

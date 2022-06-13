@@ -1,33 +1,49 @@
-/*
-Copyright © 2022 NAME HERE <EMAIL ADDRESS>
-
-*/
 package cmd
 
 import (
 	"fmt"
+	"log"
+	"os"
 
+	autopatch "github.com/dingobar/autopatch/autopatch"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 )
 
-// chartsCmd represents the charts command
-var chartsCmd = &cobra.Command{
-	Use:   "charts",
-	Short: "A brief description of your command",
-	Long: `A longer description that spans multiple lines and likely contains examples
-and usage of using your command. For example:
+func CheckCharts(cmd *cobra.Command, args []string) {
+	fmt.Println("Checking for chart updates...")
+	var chartConfig []autopatch.ChartConfig
+	err := viper.UnmarshalKey("charts", &chartConfig)
+	if err != nil {
+		log.Fatalf("%s", err)
+	}
+	errs := autopatch.LoopChartsAndCheck(chartConfig)
 
-Cobra is a CLI library for Go that empowers applications.
-This application is a tool to generate the needed files
-to quickly create a Cobra application.`,
-	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("charts called", viper.Get("nils"))
-	},
+	for _, err := range errs {
+		fmt.Println(err)
+	}
+
+	check, err := cmd.Flags().GetBool("check")
+	if err != nil {
+		log.Fatalf("Unexpected error %s", err)
+	}
+	if len(errs) > 0 && check {
+		os.Exit(1)
+	}
+}
+
+// ChartsCmd represents the charts command
+var ChartsCmd = &cobra.Command{
+	Use:   "charts",
+	Short: "Checks the current version of the chart released and compares to the latest available",
+	Long: `This command automatically checks for the latest version of the application in the chart
+	repo, and compares it with the desired release in the given namespace.`,
+	Run: CheckCharts,
 }
 
 func init() {
-	rootCmd.AddCommand(chartsCmd)
+	rootCmd.AddCommand(ChartsCmd)
+	ChartsCmd.Flags().BoolP("check", "c", false, "os.exit(1) if there is any pending update")
 
 	// Here you will define your flags and configuration settings.
 
